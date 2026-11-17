@@ -1,7 +1,7 @@
 import { createVoyage, startVoyage, interact, chooseDock } from './campaign.js';
 import { REGIONS, distance } from './regions.js';
 import { updateSailing } from './sailing.js';
-import { drawWorld } from './coastal-art.js';
+import { drawBoard } from './board-art.js';
 import { drawTitleScene } from './title-scene.js';
 import { unlockAudio, toggleSound, playCue } from './audio.js';
 import { pauseScreen, dockScreen, resultScreen, voyageScore } from './screens.js';
@@ -16,12 +16,13 @@ let best = 0;
 try { best = Number(localStorage.getItem('stormcourier-best') || 0); } catch {}
 
 function fitStage() {
+  const narrowTitle = innerWidth < 760 && innerHeight > innerWidth && state.phase === 'title';
   const scale = Math.min(innerWidth / 1280, innerHeight / 720);
   const stage = element('stage');
   stage.style.position = 'absolute';
-  stage.style.left = '50%';
-  stage.style.top = '50%';
-  stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  stage.style.left = narrowTitle ? '0' : '50%';
+  stage.style.top = narrowTitle ? '0' : '50%';
+  stage.style.transform = narrowTitle ? 'none' : `translate(-50%, -50%) scale(${scale})`;
 }
 function beginVoyage() {
   unlockAudio(); startVoyage(state); paused = false; chartOpen = false;
@@ -43,6 +44,8 @@ function spendAtDock(choice) {
 }
 function renderModal() {
   const modal = element('modal');
+  const wasHidden = modal.hidden;
+  const focusedBuy = modal.contains(document.activeElement) ? document.activeElement.dataset.buy : null;
   modal.hidden = !(paused || ['dock', 'won', 'lost'].includes(state.phase));
   if (modal.hidden) return;
   if (paused) modal.innerHTML = pauseScreen();
@@ -55,10 +58,16 @@ function renderModal() {
     }
     modal.innerHTML = resultScreen(state, best);
   }
+  if (wasHidden || focusedBuy) {
+    const same = focusedBuy && modal.querySelector(`[data-buy="${focusedBuy}"]:not([disabled])`);
+    (same || modal.querySelector('button:not([disabled])'))?.focus();
+  }
 }
 function updateInterface() {
   const region = REGIONS[state.region];
+  const titleChanged = document.body.classList.contains('title') !== (state.phase === 'title');
   document.body.classList.toggle('title', state.phase === 'title');
+  if (titleChanged) fitStage();
   element('title').hidden = state.phase !== 'title';
   element('hud').hidden = state.phase === 'title';
   element('voyage-path').hidden = state.phase === 'title';
@@ -74,7 +83,7 @@ function updateInterface() {
   element('scrap-value').textContent = `${state.scrap} SCRAP · ${state.beacons}/3 LIGHTS`;
   const seconds = Math.ceil(state.timeLeft);
   element('clock-value').textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-  element('voyage-path').innerHTML = REGIONS.map((r, i) => `<span class="path-node ${i < state.beacons ? 'lit' : i === state.region ? 'current' : ''}">${i < state.beacons ? '✦' : `0${i + 1}`} ${r.beacon}</span>`).join('<span>—</span>');
+  element('voyage-path').innerHTML = REGIONS.map((r, i) => `<span class="path-node ${i < state.beacons ? 'lit' : i === state.region ? 'current' : ''}">${i < state.beacons ? 'LIT' : `0${i + 1}`} ${r.beacon}</span>`).join('<span>/</span>');
   element('notice').hidden = !state.messageTime || state.phase !== 'sailing';
   element('notice').textContent = state.message;
   element('dock-prompt').hidden = state.phase !== 'sailing' || distance(state.boat, region.dock) > 76;
@@ -93,20 +102,25 @@ function frame(time) {
     left: keys.has('a') || keys.has('arrowleft'), right: keys.has('d') || keys.has('arrowright'),
     up: keys.has('w') || keys.has('arrowup'), down: keys.has('s') || keys.has('arrowdown'), boost: keys.has(' '),
   }, dt);
-  if (state.phase === 'title') drawTitleScene(context, time / 1000);
-  else drawWorld(context, state, time / 1000);
+  const renderTime = matchMedia('(prefers-reduced-motion: reduce)').matches || paused || chartOpen ? 0 : time / 1000;
+  if (state.phase === 'title') drawTitleScene(context, 0);
+  else drawBoard(context, state, renderTime);
   for (const event of state.events.splice(0)) playCue(event);
   updateInterface(); requestAnimationFrame(frame);
 }
 
 addEventListener('keydown', event => {
   const key = event.key.toLowerCase();
-  if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown', ' ', 'tab'].includes(key)) event.preventDefault();
+  if (key === 'tab') return;
+  const onControl = event.target.closest?.('button, input, select, textarea');
+  if (onControl && (key === ' ' || key === 'enter')) return;
+  if (state.phase === 'sailing' && !paused && !chartOpen && ['arrowleft', 'arrowright', 'arrowup', 'arrowdown', ' '].includes(key)) event.preventDefault();
   keys.add(key);
   if (event.repeat) return;
   if (key === 'e' && !paused && !chartOpen) interact(state);
-  if (key === 'p' || key === 'escape') togglePause();
-  if (key === 'c' || key === 'tab') toggleChart();
+  if (key === 'escape' && chartOpen) toggleChart();
+  else if (key === 'p' || key === 'escape') togglePause();
+  if (key === 'c') toggleChart();
   if (key === 'r' && state.phase !== 'title') beginVoyage();
   if (key === 'm') element('mute-button').click();
 });

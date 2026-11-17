@@ -46,7 +46,7 @@ export function dockScreen(state) {
         : 'Standard speed and damage; +3 scrap per delivery. The careful crossing.'}
         · ${state.scrap} SCRAP AVAILABLE</span>
     </div>
-    <button class="primary" data-buy="depart">DEPART FOR ${next.name.toUpperCase()} ↗</button>`;
+    <button class="primary" data-buy="depart">Sail to ${next.name}</button>`;
 }
 
 export function voyageScore(state) {

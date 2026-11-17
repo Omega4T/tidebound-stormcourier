@@ -10,7 +10,7 @@ test('dock explains actual delivery payment and the next route tradeoff', () => 
   assert.match(screen, /Harbor paid \+3 scrap/);
   assert.match(screen, /25% faster/);
   assert.match(screen, /30% more damage/);
-  assert.match(screen, /DEPART FOR THE GLASS NARROWS/);
+  assert.match(screen, /Sail to The Glass Narrows/);
 });
 
 test('both terminal screens expose an ordinary restart and distinct outcomes', () => {
