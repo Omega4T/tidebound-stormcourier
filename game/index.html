@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101e2a">
+  <title>Tidebound · Stormcourier</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="viewport" aria-label="Tidebound Stormcourier sailing game">
+    <div id="stage">
+      <canvas id="sea" width="1280" height="720" aria-label="Sailing chart and coastal waters"></canvas>
+      <header id="hud" hidden>
+        <div class="identity"><span class="eyebrow">TIDEBOUND / STORMCOURIER</span><strong id="region-name"></strong><span id="mission"></span></div>
+        <div class="instrument"><span>HULL</span><strong id="hull-value"></strong><div class="meter"><i id="hull-meter"></i></div></div>
+        <div class="instrument"><span>FULL SAIL</span><strong id="sail-value">SPACE</strong><div class="meter"><i id="sail-meter"></i></div></div>
+        <div class="instrument supply"><span>LANTERN FUEL</span><strong id="cargo-value"></strong><small id="scrap-value"></small></div>
+        <div class="instrument clock"><span>STORM CLOSES IN</span><strong id="clock-value"></strong><small>0 hull or 0:00 = voyage lost</small></div>
+      </header>
+      <div id="voyage-path" hidden></div>
+      <section id="title" class="title-panel">
+        <div class="eyebrow">AN ARCHIPELAGO ON THE EDGE OF NIGHT</div>
+        <h1>TIDEBOUND<span>STORMCOURIER</span></h1>
+        <p class="premise">Three dark lighthouses.<br>One boat carrying the last lantern fuel.</p>
+        <p class="description">Sail the shoals. Salvage what the sea gives back.<br>Relight all three beacons before the storm seals the coast.</p>
+        <button id="start" class="primary">BEGIN VOYAGE <span>↗</span></button>
+        <div class="title-rules"><span><b>3</b> BEACONS TO RELIGHT</span><span><b>3:30</b> UNTIL LANDFALL</span></div>
+        <div class="controls-title"><b>WASD / ARROWS</b> steer · <b>SPACE</b> full sail<br><b>E</b> deliver at dock · <b>TAB / C</b> chart · <b>M</b> sound</div>
+        <small class="fine">An original short sailing adventure · keyboard + mouse · audio after input</small>
+      </section>
+      <section id="modal" class="modal" hidden aria-labelledby="modal-heading"></section>
+      <aside id="chart" hidden aria-label="Voyage chart"><div id="chart-content"></div><button id="close-chart">CLOSE CHART · C</button></aside>
+      <div id="notice" role="status" aria-live="polite" hidden></div>
+      <div id="dock-prompt" hidden><kbd>E</kbd><span>DELIVER LANTERN FUEL<br><small>Relight the beacon · shelter at dock</small></span></div>
+      <footer id="controls"><span><b>WASD / ↑↓←→</b> STEER &nbsp; <b>SPACE</b> FULL SAIL &nbsp; <b>E</b> DOCK</span><div><button id="chart-button">C CHART</button><button id="pause-button">P PAUSE</button><button id="mute-button">M SOUND ON</button></div></footer>
+    </div>
+  </main>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
