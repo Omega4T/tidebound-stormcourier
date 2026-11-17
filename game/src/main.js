@@ -2,6 +2,7 @@ import { createVoyage, startVoyage, interact, chooseDock } from './campaign.js';
 import { REGIONS, distance } from './regions.js';
 import { updateSailing } from './sailing.js';
 import { drawWorld } from './coastal-art.js';
+import { drawTitleScene } from './title-scene.js';
 import { unlockAudio, toggleSound, playCue } from './audio.js';
 import { pauseScreen, dockScreen, resultScreen, voyageScore } from './screens.js';
 
@@ -92,7 +93,8 @@ function frame(time) {
     left: keys.has('a') || keys.has('arrowleft'), right: keys.has('d') || keys.has('arrowright'),
     up: keys.has('w') || keys.has('arrowup'), down: keys.has('s') || keys.has('arrowdown'), boost: keys.has(' '),
   }, dt);
-  drawWorld(context, state, time / 1000);
+  if (state.phase === 'title') drawTitleScene(context, time / 1000);
+  else drawWorld(context, state, time / 1000);
   for (const event of state.events.splice(0)) playCue(event);
   updateInterface(); requestAnimationFrame(frame);
 }
