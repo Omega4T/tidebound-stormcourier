@@ -4,11 +4,11 @@ import { REGIONS, distance } from './regions.js';
 export function createVoyage() {
   return {
     phase: 'title', region: 0, beacons: 0, hull: 100, cargo: 3,
-    timeLeft: 210, elapsed: 0, scrap: 4, recovered: 0, delivered: 0,
+    timeLeft: 150, elapsed: 0, scrap: 2, recovered: 0, delivered: 0, lastPayment: 0,
     armor: false, canvas: false, route: 'shelter', score: 0,
     reason: '', events: [], message: '', messageTime: 0,
     boat: { x: 152, y: 548, vx: 0, vy: 0, angle: -0.5, invulnerable: 0, stamina: 100 },
-    particles: [], wake: [], taken: [], lightning: [], nextStrike: 5,
+    particles: [], wake: [], taken: [], signals: [], lightning: [], nextStrike: 5,
   };
 }
 
@@ -30,10 +30,15 @@ export function interact(state) {
     announce(state, 'Sail into the gold dock ring, then press E to deliver.');
     return false;
   }
+  if (state.signals.length < region.buoys.length) {
+    announce(state, 'Light both channel signals before delivering. Follow the numbered gold rings.');
+    return false;
+  }
   state.beacons++;
   state.delivered++;
   state.cargo--;
-  state.scrap += 3;
+  state.lastPayment = state.route === 'express' ? 5 : 3;
+  state.scrap += state.lastPayment;
   state.boat.vx = 0;
   state.boat.vy = 0;
   state.score += 1000;
@@ -47,6 +52,7 @@ export function chooseDock(state, choice) {
   if (choice === 'depart') {
     state.region++;
     state.taken = [];
+    state.signals = [];
     state.lightning = [];
     state.nextStrike = state.elapsed + 4;
     Object.assign(state.boat, REGIONS[state.region].spawn, { vx: 0, vy: 0, stamina: 100 });

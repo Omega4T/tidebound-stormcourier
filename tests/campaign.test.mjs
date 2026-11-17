@@ -2,11 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createVoyage, startVoyage, interact, chooseDock, tick } from '../game/src/campaign.js';
 import { REGIONS } from '../game/src/regions.js';
+import { updateSailing } from '../game/src/sailing.js';
+
+function markChannel(state) {
+  for (const buoy of REGIONS[state.region].buoys) {
+    Object.assign(state.boat, buoy, { vx: 0, vy: 0 });
+    updateSailing(state, {}, 1 / 60);
+  }
+}
 
 test('three real dock deliveries consume cargo and complete the campaign', () => {
   const state = createVoyage();
   startVoyage(state);
   for (let region = 0; region < 3; region++) {
+    markChannel(state);
     Object.assign(state.boat, REGIONS[region].dock, { vx: 0, vy: 0 });
     interact(state);
     assert.equal(state.beacons, region + 1);
@@ -30,6 +39,7 @@ test('clock failure is bounded and dock upgrades are real resource tradeoffs', (
   assert.match(state.reason, /storm/i);
   startVoyage(state);
   assert.equal(interact(state), false);
+  markChannel(state);
   Object.assign(state.boat, REGIONS[0].dock);
   interact(state);
   state.hull = 35;
@@ -37,8 +47,8 @@ test('clock failure is bounded and dock upgrades are real resource tradeoffs', (
   assert.equal(chooseDock(state, 'repair'), true);
   assert.equal(state.scrap, before - 3);
   assert.equal(state.hull, 80);
-  assert.equal(chooseDock(state, 'armor'), true);
-  assert.equal(state.armor, true);
+  assert.equal(chooseDock(state, 'armor'), false);
+  assert.equal(state.armor, false);
   assert.equal(chooseDock(state, 'canvas'), false);
   assert.equal(state.canvas, false);
   chooseDock(state, 'route');

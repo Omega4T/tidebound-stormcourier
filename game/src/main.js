@@ -3,6 +3,7 @@ import { REGIONS, distance } from './regions.js';
 import { updateSailing } from './sailing.js';
 import { drawWorld } from './coastal-art.js';
 import { unlockAudio, toggleSound, playCue } from './audio.js';
+import { pauseScreen, dockScreen, resultScreen, voyageScore } from './screens.js';
 
 const state = createVoyage();
 const canvas = document.querySelector('#sea');
@@ -15,7 +16,11 @@ try { best = Number(localStorage.getItem('stormcourier-best') || 0); } catch {}
 
 function fitStage() {
   const scale = Math.min(innerWidth / 1280, innerHeight / 720);
-  element('stage').style.transform = `scale(${scale})`;
+  const stage = element('stage');
+  stage.style.position = 'absolute';
+  stage.style.left = '50%';
+  stage.style.top = '50%';
+  stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
 function beginVoyage() {
   unlockAudio(); startVoyage(state); paused = false; chartOpen = false;
@@ -35,27 +40,19 @@ function spendAtDock(choice) {
   unlockAudio();
   if (chooseDock(state, choice)) { previousPhase = ''; updateInterface(); }
 }
-function summaryMarkup() {
-  return `<div class="summary"><div><strong>${state.beacons}/3</strong>BEACONS RELIT</div><div><strong>${Math.round(state.hull)}%</strong>HULL REMAINING</div><div><strong>${state.recovered}</strong>SALVAGE RECOVERED</div><div><strong>${Math.ceil(state.timeLeft)}s</strong>STORM MARGIN</div></div>`;
-}
 function renderModal() {
   const modal = element('modal');
-  const visible = paused || ['dock', 'won', 'lost'].includes(state.phase);
-  modal.hidden = !visible;
-  if (!visible) return;
-  if (paused) {
-    modal.innerHTML = '<div class="eyebrow">SAFE HARBOR</div><h2 id="modal-heading">The tide can wait.</h2><p>Voyage paused. Your boat and the storm clock are held.</p><button class="primary" data-action="resume">RESUME · P</button><button class="secondary" data-action="restart">NEW VOYAGE · R</button>';
-  } else if (state.phase === 'dock') {
-    const next = REGIONS[state.region + 1];
-    modal.innerHTML = `<div class="eyebrow">${REGIONS[state.region].beacon.toUpperCase()} / BEACON RELIT</div><h2 id="modal-heading">A little light goes a long way.</h2>${summaryMarkup()}<p>The harbor pays +3 scrap. Choose what you need before ${next.name}.</p><div class="shop"><button data-buy="repair" ${state.scrap < 3 || state.hull >= 100 ? 'disabled' : ''}><b>PATCH HULL · 3 SCRAP</b><small>Restore 45 hull.<br>Trade repairs for upgrades.</small></button><button data-buy="armor" ${state.scrap < 4 || state.armor ? 'disabled' : ''}><b>${state.armor ? 'COPPER HULL FITTED' : 'COPPER HULL · 4 SCRAP'}</b><small>42% less impact damage.<br>Weather the narrow water.</small></button><button data-buy="canvas" ${state.scrap < 4 || state.canvas ? 'disabled' : ''}><b>${state.canvas ? 'STORM CANVAS FITTED' : 'STORM CANVAS · 4 SCRAP'}</b><small>18% more sailing speed.<br>Buy time at greater risk.</small></button></div><div class="route-row"><button data-buy="route">${state.route === 'shelter' ? 'SHELTERED PASSAGE' : 'EXPRESS TIDE'} ↻</button><span>${state.route === 'shelter' ? 'Weaker current and fewer lightning strikes. The careful crossing.' : 'Stronger current and more frequent lightning. Master the faster water.'} · ${state.scrap} SCRAP AVAILABLE</span></div><button class="primary" data-buy="depart">DEPART FOR ${next.name.toUpperCase()} ↗</button>`;
-  } else {
-    const won = state.phase === 'won';
-    const score = Math.round(state.score + state.hull * 10 + state.timeLeft * 5);
-    if (won && score > best) {
+  modal.hidden = !(paused || ['dock', 'won', 'lost'].includes(state.phase));
+  if (modal.hidden) return;
+  if (paused) modal.innerHTML = pauseScreen();
+  else if (state.phase === 'dock') modal.innerHTML = dockScreen(state);
+  else {
+    const score = voyageScore(state);
+    if (state.phase === 'won' && score > best) {
       best = score;
       try { localStorage.setItem('stormcourier-best', String(best)); } catch {}
     }
-    modal.innerHTML = `<div class="eyebrow ${won ? '' : 'loss-label'}">${won ? 'THE COAST IS HOME' : 'VOYAGE LOST'}</div><h2 id="modal-heading">${won ? 'Three lights. One way home.' : 'The sea keeps its stories.'}</h2><p>${won ? 'Every beacon burns again. The fishing fleet follows your lights through the storm.' : state.reason}</p>${summaryMarkup()}<p>VOYAGE SCORE ${score.toLocaleString()} · PERSONAL BEST ${best.toLocaleString()}</p><button class="primary" data-action="restart">SAIL ANOTHER VOYAGE · R</button><button class="secondary" data-action="title">RETURN TO TITLE</button>`;
+    modal.innerHTML = resultScreen(state, best);
   }
 }
 function updateInterface() {
@@ -65,7 +62,9 @@ function updateInterface() {
   element('hud').hidden = state.phase === 'title';
   element('voyage-path').hidden = state.phase === 'title';
   element('region-name').textContent = region.name;
-  element('mission').textContent = `DELIVER TO ${region.beacon.toUpperCase()} · E AT THE GOLD DOCK`;
+  element('mission').textContent = state.signals.length < 2
+    ? `LIGHT CHANNEL SIGNALS ${state.signals.length}/2 → DELIVER TO ${region.beacon.toUpperCase()}`
+    : `CHANNEL CLEAR → ${region.beacon.toUpperCase()} · E AT THE GOLD DOCK`;
   element('hull-value').textContent = `${Math.ceil(state.hull)}%`;
   element('hull-meter').style.width = `${state.hull}%`;
   element('sail-meter').style.width = `${state.boat.stamina}%`;
@@ -78,8 +77,11 @@ function updateInterface() {
   element('notice').hidden = !state.messageTime || state.phase !== 'sailing';
   element('notice').textContent = state.message;
   element('dock-prompt').hidden = state.phase !== 'sailing' || distance(state.boat, region.dock) > 76;
+  element('dock-prompt').querySelector('span').innerHTML = state.signals.length === 2
+    ? 'DELIVER LANTERN FUEL<br><small>Channel marked · relight the beacon</small>'
+    : `CHANNEL SIGNALS ${state.signals.length}/2<br><small>Light the numbered gold rings first</small>`;
   element('chart').hidden = !chartOpen;
-  if (chartOpen) element('chart-content').innerHTML = `<div class="eyebrow">THE STORMCOURIER'S CHART</div><h2>Three lights before nightfall.</h2>${REGIONS.map((r, i) => `<div class="chart-row"><span class="badge">${i < state.beacons ? '✦' : i + 1}</span><div><strong>${r.name} · ${i < state.beacons ? 'RELIT' : i === state.region ? 'SAILING NOW' : 'AHEAD'}</strong><small>${r.warning}</small></div></div>`).join('')}<p>Gold dock rings mark your destination. Striped reefs hurt the hull. Collect floating salvage to fund repairs and upgrades. The chart pauses the storm.</p>`;
+  if (chartOpen) element('chart-content').innerHTML = `<div class="eyebrow">THE STORMCOURIER'S CHART</div><h2>Three lights before nightfall.</h2>${REGIONS.map((r, i) => `<div class="chart-row"><span class="badge">${i < state.beacons ? '✦' : i + 1}</span><div><strong>${r.name} · ${i < state.beacons ? 'RELIT' : i === state.region ? 'SAILING NOW' : 'AHEAD'}</strong><small>${r.warning} · ${i === state.region ? `${state.signals.length}/2 CHANNEL SIGNALS LIT` : '2 SIGNALS → BEACON'}</small></div></div>`).join('')}<p>Light both numbered channel signals in each region, then deliver at the gold dock. Reefs hurt your hull; floating salvage funds repairs and upgrades. Express: 25% speed, +2 delivery scrap, 30% more damage. The chart pauses the storm.</p>`;
   const phaseKey = `${state.phase}:${paused}:${state.scrap}:${state.route}:${state.hull}:${state.armor}:${state.canvas}`;
   if (phaseKey !== previousPhase) { previousPhase = phaseKey; renderModal(); }
 }

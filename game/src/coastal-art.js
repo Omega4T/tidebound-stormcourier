@@ -166,6 +166,13 @@ export function drawWorld(ctx, state, time) {
   region.islands.forEach(island => drawIsland(ctx, island, region, time, island.light && state.beacons > state.region));
   region.reefs.forEach(reef => drawReef(ctx, reef, time));
   region.buoys.forEach((buoy, i) => {
+    const lit = state.signals.includes(i);
+    ctx.strokeStyle = lit ? '#9bd7bd' : '#f2cb82';
+    ctx.lineWidth = 2; ctx.setLineDash(lit ? [] : [6, 5]);
+    ctx.beginPath(); ctx.arc(buoy.x, buoy.y, 35 + Math.sin(time * 2) * 2, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]); ctx.font = 'bold 15px system-ui'; ctx.textAlign = 'center';
+    ctx.fillStyle = lit ? '#b4f0ca' : '#ffe1a2';
+    ctx.fillText(lit ? 'SIGNAL LIT' : `SIGNAL ${i + 1}`, buoy.x, buoy.y - 45);
     ellipse(ctx, buoy.x, buoy.y + 6, 8, 3, '#d9e2c74d');
     ctx.fillStyle = i ? '#e3c99c' : '#c68566';
     ctx.fillRect(buoy.x - 3, buoy.y - 6 + Math.sin(time * 2), 6, 10);
@@ -213,7 +220,7 @@ function drawDock(ctx, state, time) {
   ctx.textAlign = 'center'; ctx.font = '600 13px system-ui';
   ctx.fillStyle = '#071f30dd'; ctx.fillRect(dock.x - 83, dock.y + 41, 166, 45);
   ctx.fillStyle = GOLD; ctx.fillText(REGIONS[state.region].beacon.toUpperCase(), dock.x, dock.y + 59);
-  ctx.fillStyle = '#d7e4dc'; ctx.font = '12px system-ui'; ctx.fillText('GOLD RING · E TO DELIVER', dock.x, dock.y + 77);
+  ctx.fillStyle = '#d7e4dc'; ctx.font = '12px system-ui'; ctx.fillText(state.signals.length === 2 ? 'CHANNEL CLEAR · E TO DELIVER' : `SIGNALS ${state.signals.length}/2 · MARK THE CHANNEL`, dock.x, dock.y + 77);
 }
 
 function drawLightning(ctx, strike, time) {

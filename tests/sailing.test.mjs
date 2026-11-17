@@ -33,7 +33,7 @@ test('salvage is collected once and a ruined hull causes a genuine failure', () 
   Object.assign(state.boat, { x: 288, y: 483 });
   updateSailing(state, {}, 1 / 60);
   assert.equal(state.recovered, 1);
-  assert.equal(state.scrap, 6);
+  assert.equal(state.scrap, 4);
   updateSailing(state, {}, 1 / 60);
   assert.equal(state.recovered, 1);
   state.hull = 1;
@@ -43,7 +43,7 @@ test('salvage is collected once and a ruined hull causes a genuine failure', () 
   assert.match(state.reason, /hull/i);
 });
 
-test('an idle voyage fails within its published 210 seconds', () => {
-  const state = sail(211);
+test('an idle voyage fails within its published 150 seconds', () => {
+  const state = sail(151);
   assert.equal(state.phase, 'lost');
 });

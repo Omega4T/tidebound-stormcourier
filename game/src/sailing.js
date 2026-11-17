@@ -4,7 +4,7 @@ import { tick, announce } from './campaign.js';
 export function damageHull(state, amount, cause) {
   const boat = state.boat;
   if (boat.invulnerable > 0 || state.phase !== 'sailing') return;
-  const damage = Math.round(amount * (state.armor ? 0.58 : 1));
+  const damage = Math.round(amount * (state.armor ? 0.58 : 1) * (state.route === 'express' ? 1.3 : 1));
   state.hull = Math.max(0, state.hull - damage);
   boat.invulnerable = 1.15;
   state.shake = 12;
@@ -31,7 +31,7 @@ export function updateSailing(state, input, dt) {
   const fullSail = !!input.boost && boat.stamina > 4 && length > 0;
   boat.fullSail = fullSail;
   boat.stamina = Math.max(0, Math.min(100, boat.stamina + dt * (fullSail ? -26 : 19)));
-  const speed = (fullSail ? 226 : 142) * (state.canvas ? 1.18 : 1);
+  const speed = (fullSail ? 226 : 142) * (state.canvas ? 1.18 : 1) * (state.route === 'express' ? 1.25 : 1);
   const response = 1 - Math.exp(-dt * (fullSail ? 3.1 : 7.5));
   const inTide = state.region > 0 && boat.x > 350 && boat.x < 680;
   const tide = inTide ? region.current * (state.route === 'express' ? 1.6 : 1) : 0;
@@ -60,6 +60,12 @@ export function updateSailing(state, input, dt) {
       boat.vx *= 0.3; boat.vy *= 0.3;
     }
   }
+  region.buoys.forEach((buoy, index) => {
+    if (!state.signals.includes(index) && distance(boat, buoy) < 42) {
+      state.signals.push(index); state.score += 250;
+      announce(state, `CHANNEL SIGNAL ${index + 1} LIT · ${state.signals.length}/2. ${state.signals.length === 2 ? 'The dock is ready for delivery.' : 'Sail for the other numbered signal.'}`, 'salvage');
+    }
+  });
   region.salvage.forEach((crate, index) => {
     if (!state.taken.includes(index) && distance(boat, crate) < 34) {
       state.taken.push(index);

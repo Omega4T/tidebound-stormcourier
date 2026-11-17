@@ -4,7 +4,7 @@
 [![rank](https://make.fun/badge/best-game-01/Omega4T/tidebound-stormcourier/rank.svg)](https://make.fun/bounty/best-game-01/leaderboard)
 [![reward](https://make.fun/badge/best-game-01/Omega4T/tidebound-stormcourier/reward.svg)](https://make.fun/bounty/best-game-01)
 
-An original sailing adventure. Deliver three lantern-fuel crates across an archipelago before the storm closes the coast. Reefs, moving wrecks, currents and telegraphed lightning test your route. Salvage funds repairs, armor or faster canvas at lighthouse docks.
+An original sailing adventure. Mark two channel signals per crossing, then deliver three lantern-fuel crates across an archipelago before the 150-second storm closes the coast. Reefs, moving wrecks, currents and telegraphed lightning test your route. Salvage funds repairs, armor or faster canvas at lighthouse docks. Sheltered passage trades speed for safety; the express contract grants 25% more speed and two extra delivery scrap, but impacts deal 30% more damage and lightning comes sooner.
 
 ## Play locally
 
